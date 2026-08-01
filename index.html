@@ -1,0 +1,345 @@
+<!-- DEVVE Tracker v1.1 -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#161A1D">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>DEVVE Tracker</title>
+<style>
+  :root{
+    --ink:#161A1D; --ink2:#22282C; --paper:#F4F5F6; --card:#FFFFFF;
+    --line:#E4E7EA; --muted:#6B7378; --muted2:#8A9298;
+    --in:#0E9F6E; --in-bg:#E7F6F0; --out:#B4443B; --out-bg:#FBECEA;
+    --gold:#9A6D00; --gold-bg:#FBF1D8; --accent:#0E9F6E;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius:14px; --shadow:0 1px 2px rgba(16,20,24,.06),0 6px 20px rgba(16,20,24,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--sans); background:var(--paper); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.45;}
+  a{color:var(--accent); text-decoration:none}
+  button{font-family:inherit}
+  .mono{font-family:var(--mono); font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;}
+
+  /* App bar */
+  .bar{position:sticky; top:0; z-index:20; background:var(--ink); color:#fff;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom,0)); padding-top:calc(14px + env(safe-area-inset-top,0));
+    display:flex; align-items:center; gap:12px;}
+  .bar .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(160deg,#1c2226,#0e1214);
+    display:flex;flex-direction:column;justify-content:center;gap:3px;padding:6px;flex:0 0 auto}
+  .bar .mark i{height:3px;border-radius:2px;background:var(--in);display:block}
+  .bar .mark i:last-child{background:var(--gold)}
+  .bar h1{font-size:16px;margin:0;letter-spacing:.2px;font-weight:650}
+  .bar h1 small{display:block;font-size:11px;color:#9AA3A8;font-weight:400;letter-spacing:.3px}
+  .bar .sp{flex:1}
+  .iconbtn{background:#2a3136;color:#cfd6da;border:1px solid #333c42;border-radius:10px;
+    padding:8px 11px;font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .iconbtn:active{transform:translateY(1px)}
+  .iconbtn.primary{background:var(--in);border-color:var(--in);color:#04150e;font-weight:600}
+
+  main{max-width:1080px;margin:0 auto;padding:16px 14px 60px}
+
+  /* Summary cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 15px;box-shadow:var(--shadow)}
+  .card .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .card .wname{font-weight:650;font-size:14px;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+  .card .addr{font-size:11px;color:var(--muted)}
+  .card .es{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:3px 7px;white-space:nowrap}
+  .rows{display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:13px}
+  .rows .k{color:var(--muted)}
+  .rows .v{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+  .v.in{color:var(--in)} .v.out{color:var(--out)}
+  .bal{border-top:1px solid var(--line);margin-top:9px;padding-top:9px}
+  .bal .v{font-weight:600}
+  .stakepill{display:inline-flex;align-items:center;gap:5px;background:var(--gold-bg);color:var(--gold);
+    border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:600;margin-top:9px}
+  .warn{background:#FFF7E6;border:1px solid #F2D99A;color:#7A5A00;border-radius:10px;
+    padding:8px 10px;font-size:12px;margin-top:9px}
+  .card.total{background:linear-gradient(180deg,#1b2226,#141a1d);color:#fff;border-color:#22282c}
+  .card.total .k{color:#9aa3a8}.card.total .addr{color:#8a9298}
+  .card.total .v{color:#eef2f4}.card.total .bal{border-color:#2a3136}
+
+  /* Filters */
+  .filters{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px;box-shadow:var(--shadow);margin-bottom:14px}
+  .filters .line{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .filters .line + .line{margin-top:9px}
+  .search{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--paper);
+    border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+  .search input{border:0;background:transparent;outline:none;width:100%;font-size:14px;color:var(--ink)}
+  select,.datein{border:1px solid var(--line);background:var(--card);border-radius:10px;
+    padding:8px 10px;font-size:13px;color:var(--ink)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{border:0;background:var(--card);padding:8px 12px;font-size:13px;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--ink);color:#fff}
+  .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);
+    border:1px solid var(--line);border-radius:10px;padding:7px 11px;cursor:pointer;user-select:none}
+  .chk input{accent-color:var(--gold)}
+  .chk.on{color:var(--gold);border-color:#E6CF97;background:var(--gold-bg)}
+  .ghost{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 11px;
+    font-size:13px;color:var(--muted);cursor:pointer}
+  .count{font-size:12.5px;color:var(--muted);margin-left:auto}
+
+  /* Table */
+  .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{position:sticky;top:0;background:#FAFBFB;text-align:left;color:var(--muted);
+    font-weight:600;font-size:11.5px;letter-spacing:.3px;text-transform:uppercase;
+    padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer}
+  thead th.num{text-align:right}
+  tbody td{padding:10px 12px;border-bottom:1px solid #EEF1F2;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#FAFBFC}
+  td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dir{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px;white-space:nowrap}
+  .dir.in{color:var(--in)} .dir.out{color:var(--out)}
+  .arrow{width:18px;height:18px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .dir.in .arrow{background:var(--in-bg)} .dir.out .arrow{background:var(--out-bg)}
+  .badge{font-size:10.5px;font-weight:700;color:var(--gold);background:var(--gold-bg);
+    border-radius:6px;padding:2px 6px;margin-left:6px;letter-spacing:.3px}
+  .cp{display:flex;flex-direction:column;gap:1px}
+  .cp .tag{font-size:12px;color:var(--ink)} .cp .ad{font-size:11px;color:var(--muted);font-family:var(--mono)}
+  .wtag{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+  .method{font-size:12px;color:var(--ink2)}
+  .hash{font-family:var(--mono);font-size:12px;color:var(--accent)}
+  .date{white-space:nowrap;color:var(--ink2)} .date small{display:block;color:var(--muted2);font-size:11px}
+
+  /* Mobile cards */
+  .mcards{display:none}
+  @media(max-width:720px){
+    thead,.tablewrap table{display:none}
+    .mcards{display:block}
+    .mrow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;
+      box-shadow:var(--shadow);margin-bottom:10px}
+    .mrow .r1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .mrow .amt{font-family:var(--mono);font-weight:650;font-size:16px;font-variant-numeric:tabular-nums}
+    .mrow .amt.in{color:var(--in)} .mrow .amt.out{color:var(--out)}
+    .mrow .r2{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;
+      padding-top:8px;border-top:1px solid #EEF1F2;font-size:12px;color:var(--muted)}
+    .mrow .usd{color:var(--muted)}
+  }
+
+  /* Empty & panels */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+  .panel h2{font-size:15px;margin:0 0 4px}
+  .panel p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .steps{counter-reset:s;display:grid;gap:12px;margin:16px 0 0}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step .n{counter-increment:s;flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .step .n::before{content:counter(s)}
+  .step .b{font-size:13.5px}
+  .step .b b{display:block;margin-bottom:2px}
+  .addrline{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .addrline input{flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    font-family:var(--mono);font-size:13px}
+  .btn{background:var(--in);color:#04150e;border:1px solid var(--in);border-radius:10px;
+    padding:10px 14px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .btn.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .hint{font-size:12px;color:var(--muted)}
+
+  /* Wallet manager */
+  .wlist{display:grid;gap:8px;margin-top:6px}
+  .witem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .witem .lab{font-weight:600;font-size:13px} .witem .ad{font-size:11px;color:var(--muted);font-family:var(--mono)}
+  .witem .x{margin-left:auto;color:var(--out);background:var(--out-bg);border:0;border-radius:8px;
+    padding:5px 9px;font-size:12px;cursor:pointer}
+  .witem .el{color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer}
+
+  /* Toast + modal */
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:13.5px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .modal{position:fixed;inset:0;background:rgba(16,20,24,.5);display:none;align-items:center;
+    justify-content:center;z-index:70;padding:18px}
+  .modal.show{display:flex}
+  .sheet{background:var(--card);border-radius:16px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .sheet h3{margin:0 0 6px;font-size:16px}
+  .sheet p{margin:0 0 14px;color:var(--muted);font-size:13px}
+  .sheet label{font-size:12px;color:var(--muted);display:block;margin:10px 0 4px}
+  .sheet input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+  .sheet .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+  .sheet .actions .ghost{padding:10px 14px}
+  .sheet .actions .ghost.danger{color:var(--out);border-color:#E6C4C0}
+  .sheet .actions .ghost.danger:hover{background:var(--out-bg)}
+  .sheet.help{max-width:540px;max-height:82vh;overflow:auto}
+  .sheet.help h3 .hver{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--muted);opacity:.7}
+  .sheet.help h4{margin:16px 0 4px;font-size:13px;color:var(--ink);font-weight:650;letter-spacing:.2px}
+  .sheet.help h4:first-of-type{margin-top:2px}
+  .sheet.help p,.sheet.help li{font-size:13px;color:var(--muted);margin:0 0 6px;line-height:1.55}
+  .sheet.help ul{margin:0 0 6px;padding-left:18px}
+  .sheet.help code{font-family:var(--mono);background:#eef1f3;padding:1px 5px;border-radius:5px;font-size:12px;color:var(--ink)}
+  .sheet.help .tip{background:var(--in-bg);color:#0a5c40;border-radius:10px;padding:9px 11px;font-size:12.5px;margin:10px 0;line-height:1.5}
+  .sheet.help .dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin:0 3px}
+  .sheet.help .dot.i{background:var(--in)} .sheet.help .dot.o{background:var(--out)} .sheet.help .dot.s{background:var(--gold)}
+  .sheet.help .priv{border:1px solid var(--line);border-left:3px solid var(--ink);background:#FBFCFC;border-radius:10px;padding:12px 13px;margin:12px 0}
+  .sheet.help .priv h4{margin:0 0 7px;display:flex;align-items:center;gap:7px}
+  .sheet.help .priv h4 .lk{display:inline-flex;width:18px;height:18px;border-radius:5px;background:var(--ink);color:#fff;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
+  .sheet.help .priv ul{margin:0;padding-left:18px}
+  .sheet.help .priv li{margin:0 0 5px}
+  .sheet.help .priv li:last-child{margin-bottom:0}
+
+  .footnote{color:var(--muted);font-size:12px;margin-top:16px;line-height:1.6}
+  .footnote .ver{font-family:var(--mono);font-size:11px;opacity:.65;letter-spacing:.3px}
+
+  /* Print */
+  .printhead{display:none}
+  @media print{
+    @page{margin:14mm}
+    .bar,.filters,.actions-inline,.import-panel,.wallet-panel,.iconbtn,.footnote .noprint,
+    .empty-cta,.count .noprint{display:none !important}
+    body{background:#fff}
+    main{padding:0;max-width:none}
+    .printhead{display:block;margin-bottom:12px}
+    .printhead h1{font-size:18px;margin:0 0 2px;color:#000}
+    .printhead .meta{font-size:10.5px;color:#333;line-height:1.5}
+    .cards{margin-bottom:10px;gap:8px}
+    .card{box-shadow:none;break-inside:avoid}
+    .card.total{background:#fff;color:#000;border:1px solid #999}
+    .card.total .k,.card.total .v,.card.total .addr{color:#000}
+    .tablewrap{box-shadow:none;border:1px solid #999}
+    thead,.tablewrap table{display:table-header-group;}
+    table{display:table;width:100%}
+    .mcards{display:none !important}
+    thead th{background:#eee;color:#000;position:static}
+    tbody td{border-bottom:1px solid #ccc}
+    tr{break-inside:avoid}
+    .hash{color:#000}
+    a{color:#000}
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="mark"><i></i><i></i><i></i></div>
+  <h1>DEVVE Tracker<small>on-chain transactieoverzicht</small></h1>
+  <div class="sp"></div>
+  <button class="iconbtn" id="btnManage" title="Wallets & import">＋ Wallet</button>
+  <button class="iconbtn" id="btnPrint" title="Print of opslaan als PDF">⎙ PDF</button>
+  <button class="iconbtn" id="btnHelp" title="Uitleg" aria-label="Uitleg">?</button>
+</div>
+
+<main>
+  <!-- print-only header -->
+  <div class="printhead" id="printhead"></div>
+
+  <!-- Empty state -->
+  <div id="empty" class="panel empty-cta" style="display:none">
+    <h2>Zet je DEVVE-transacties in beeld</h2>
+    <p>Deze app draait volledig op je eigen toestel. Je data wordt lokaal in je browser bewaard en met niemand gedeeld.</p>
+    <div class="steps">
+      <div class="step"><span class="n"></span><div class="b"><b>Plak je wallet-adres en open Etherscan</b>
+        Je gaat direct naar de DEVVE-transacties van jouw adres.
+        <div class="addrline">
+          <input id="emAddr" class="mono" placeholder="0x… jouw wallet-adres" autocomplete="off" spellcheck="false">
+          <button class="btn dark" id="emOpen">Open op Etherscan ↗</button>
+        </div>
+        <div class="hint" style="margin-top:6px">Op Etherscan: klik op het spreadsheet-icoon “Download Page Data”. Meerdere pagina’s? Exporteer ze allemaal — de app voegt ze samen.</div>
+      </div></div>
+      <div class="step"><span class="n"></span><div class="b"><b>Upload de CSV(’s) hieronder</b>
+        De app herkent automatisch welk adres van jou is en of tokens naar staking gingen.
+        <div style="margin-top:10px"><label class="btn" for="emFile">＋ CSV-bestand(en) kiezen<input id="emFile" type="file" accept=".csv" multiple hidden></label></div>
+      </div></div>
+      <div class="step"><span class="n"></span><div class="b"><b>Filter, print of sla op als PDF</b>
+        Klaar als bewijs voor bijvoorbeeld de DEVVE-migratie.</div></div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="cards" id="cards"></div>
+
+  <!-- Filters -->
+  <div class="filters" id="filters" style="display:none">
+    <div class="line">
+      <div class="search">🔎<input id="q" placeholder="Zoek op hash, adres of naam…" autocomplete="off"></div>
+      <div class="seg" id="dirSeg">
+        <button data-d="all" class="on">Alle</button>
+        <button data-d="IN">In</button>
+        <button data-d="OUT">Uit</button>
+      </div>
+      <label class="chk" id="stakeChk"><input type="checkbox" id="stakeOnly">Alleen staking</label>
+    </div>
+    <div class="line">
+      <select id="fWallet"><option value="">Alle wallets</option></select>
+      <select id="fMethod"><option value="">Alle types</option></select>
+      <input type="date" class="datein" id="fFrom" title="Vanaf datum">
+      <input type="date" class="datein" id="fTo" title="Tot datum">
+      <button class="ghost" id="fReset">Wis filters</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="tablewrap" id="tablewrap" style="display:none">
+    <table>
+      <thead><tr>
+        <th data-s="date">Datum (UTC)</th>
+        <th data-s="direction">Richting</th>
+        <th class="num" data-s="amount">Aantal DEVVE</th>
+        <th data-s="counterparty">Tegenpartij</th>
+        <th data-s="method">Type</th>
+        <th data-s="wallet">Wallet</th>
+        <th class="num" data-s="usd">Waarde (USD)</th>
+        <th data-s="hash">Tx</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="mcards" id="mcards"></div>
+  </div>
+
+  <div class="footnote" id="footnote"></div>
+</main>
+
+<!-- Wallet / import panel modal -->
+<div class="modal" id="manageModal">
+  <div class="sheet">
+    <h3>Wallets & import</h3>
+    <p>Voeg je DEVVE-wallets toe door hun Etherscan-CSV te uploaden. Bestaat een transactie al, dan wordt hij overgeslagen.</p>
+    <div class="addrline">
+      <input id="mAddr" class="mono" placeholder="0x… wallet-adres (optioneel)" autocomplete="off" spellcheck="false">
+      <button class="btn dark" id="mOpen">Etherscan ↗</button>
+    </div>
+    <div style="margin-top:10px"><label class="btn" for="mFile">＋ CSV-bestand(en) importeren<input id="mFile" type="file" accept=".csv" multiple hidden></label></div>
+    <div class="wlist" id="wlist"></div>
+    <div class="actions" style="justify-content:space-between">
+      <div style="display:flex;gap:8px">
+        <button class="ghost" id="exportBackup">Back-up ⤓</button>
+        <label class="ghost" for="importBackup" style="cursor:pointer">Herstel ⤒<input id="importBackup" type="file" accept=".json" hidden></label>
+        <button class="ghost danger" id="wipeAll">Wis alles</button>
+      </div>
+      <button class="ghost" id="closeManage">Sluiten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Label wallet modal -->
+<div class="modal" id="helpModal">
+  <div class="sheet help">
+    <h3>DEVVE Tracker — uitleg <span class="hver" id="helpVer"></span></h3>
+    <p>Een offline overzicht van je on-chain DEVVE-transacties. Alle gegevens blijven lokaal op dit toestel; er wordt niets geüpload.</p>
+
+    <div class="priv">
+      <h4><span class="lk">🔒</span>Privacy &amp; opslag</h4>
+      <ul>
+        <li><b>Alles staat lokaal op jóuw telefoon</b>, in de opslag van deze app. Geen server, geen account, geen login.</li>
+        <li>Je gegevens worden <b>nergens geüpload of gedeeld</b>. Niemand kan jouw wallets of transacties zien — ook de maker van de app niet.</li>
+        <li>Deel je de app met iemand anders, dan ziet die persoon <b>alleen zijn eigen</b> geïmporteerde gegevens op zijn eigen toestel. Ieder heeft een volledig gescheiden lijst; niemand ziet die van een ander.</li>
+        <li>De app werkt <b>offline</b>. Internet is alleen nodig als je zelf op een Etherscan-link tikt.</li>
+      </ul>
+    </div>
+
+    <h4>1. Wallet toevoegen</h4>
+    <p>Tik op <b>＋ Wallet</b> en kies je CSV-b
